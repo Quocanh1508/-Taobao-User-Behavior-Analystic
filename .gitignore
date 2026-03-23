@@ -15,6 +15,7 @@ data/processed/
 *.zip
 *.gz
 *.tar
+*.tgz
 
 # Bỏ qua các file log sinh ra trong quá trình chạy
 *.log
