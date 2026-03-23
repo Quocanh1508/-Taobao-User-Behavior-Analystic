@@ -1,0 +1,68 @@
+# ==========================================
+# 1. DATASETS & LOGS 
+# ==========================================
+# Bỏ qua toàn bộ thư mục chứa data thô và data đã xử lý
+data/
+data/raw/
+data/processed/
+
+# Bỏ qua các định dạng file dữ liệu lớn 
+*.csv
+*.tsv
+*.json
+*.parquet
+*.avro
+*.zip
+*.gz
+*.tar
+
+# Bỏ qua các file log sinh ra trong quá trình chạy
+*.log
+logs/
+
+# ==========================================
+# 2. BẢO MẬT & CREDENTIALS 
+# ==========================================
+# Bỏ qua file chứa biến môi trường 
+.env
+.env.*
+
+# BẮT BUỘC bỏ qua file Service Account Key của Google Cloud
+*gcp-key*.json
+*service-account*.json
+credentials/
+
+# ==========================================
+# 3. MÔI TRƯỜNG PYTHON 
+# ==========================================
+# Bỏ qua thư mục môi trường ảo chứa các thư viện tải về
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ==========================================
+# 4. CÔNG CỤ BIG DATA 
+# ==========================================
+spark-warehouse/
+metastore_db/
+derby.log
+
+airflow/logs/
+airflow/airflow-webserver.pid
+airflow/airflow.db
+
+# ==========================================
+# 5. OS & IDE
+# ==========================================
+.DS_Store
+.vscode/
+.idea/
+
+# ==========================================
+# 6. LOCAL MOCK & AGENTS
+# ==========================================
+.agent/
+gs_mock_bucket/
