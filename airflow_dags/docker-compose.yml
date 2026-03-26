@@ -1,13 +1,16 @@
-version: '3.8'
+# version: '3.8' (removed version for modern compose compliance)
 
 x-airflow-common:
   &airflow-common
-  image: apache/airflow:2.7.3
+  build:
+    context: .
+    dockerfile: Dockerfile
   environment:
     - AIRFLOW__CORE__EXECUTOR=LocalExecutor
     - AIRFLOW__CORE__LOAD_EXAMPLES=False
     - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
-    - _PIP_ADDITIONAL_REQUIREMENTS=apache-airflow-providers-apache-spark apache-airflow-providers-google apache-airflow-providers-slack
+    - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/credentials.json
+    - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true
   volumes:
     - ../airflow_dags:/opt/airflow/dags
     - ../spark_jobs:/app/spark_jobs
@@ -47,7 +50,8 @@ services:
     container_name: airflow-webserver
     command: webserver
     ports:
-      - "8080:8080"
+      - "8090:8080"
+    restart: always
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -58,3 +62,4 @@ services:
     <<: *airflow-common
     container_name: airflow-scheduler
     command: scheduler
+    restart: always

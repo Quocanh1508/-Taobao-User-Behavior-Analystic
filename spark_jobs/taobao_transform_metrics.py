@@ -37,13 +37,15 @@ def transform_metrics(spark, input_path, output_fact_path, output_metrics_path):
     w_sum = Window.partitionBy("user_id").orderBy("event_time").rowsBetween(Window.unboundedPreceding, Window.currentRow)
     
     fact_df = sess_df.withColumn("session_idx", F.sum("is_new_session").over(w_sum)) \
-                     .withColumn("session_id", F.concat(F.col("user_id").cast("string"), F.lit("_"), F.col("session_idx").cast("string")))
+                     .withColumn("session_id", F.concat(F.col("user_id").cast("string"), F.lit("_"), F.col("session_idx").cast("string"))) \
+                     .withColumn("date_key", F.date_format("event_date", "yyyyMMdd").cast("integer")) \
+                     .withColumn("is_buy", F.col("behavior_type") == "buy")
 
     # Keep relevant fields for Processed_Zone/Taobao/Fact_Events/
     # Ensure optimal files
     fact_output = fact_df.select(
         "user_id", "item_id", "category_id", "behavior_type", 
-        "event_time", "event_date", "session_id"
+        "event_time", "event_date", "session_id", "date_key", "is_buy"
     ).repartition("event_date")
     
     print(f"Writing Fact Events to: {output_fact_path}")

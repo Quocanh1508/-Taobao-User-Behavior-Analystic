@@ -117,8 +117,7 @@ with DAG(
         write_disposition='WRITE_APPEND',
         time_partitioning={'type': 'DAY', 'field': 'event_date'},
         cluster_fields=['user_id', 'item_id'],
-        google_cloud_storage_conn_id='google_cloud_default',
-        bigquery_conn_id='google_cloud_default'
+        gcp_conn_id='google_cloud_default'
     )
 
     # 4b. Load Daily Metrics into BQ
@@ -130,10 +129,7 @@ with DAG(
         source_format='PARQUET',
         write_disposition='WRITE_APPEND',
         time_partitioning={'type': 'DAY', 'field': 'event_date'},
-        # PySpark specific inference mapping via API options
-        parquet_options={"enableListInference": True}, 
-        google_cloud_storage_conn_id='google_cloud_default',
-        bigquery_conn_id='google_cloud_default'
+        gcp_conn_id='google_cloud_default'
     )
 
     # 5. SCD Type 2 MERGE Execution for Dim_Item

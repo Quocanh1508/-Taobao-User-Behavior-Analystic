@@ -77,7 +77,7 @@ def main():
                     accumulated_sim_time += time_diff
                 
                 # Sleep if accumulated time corresponds to more than 0.1 real seconds
-                real_sleep = accumulated_sim_time / args.speed_factor
+                real_sleep = min(accumulated_sim_time / args.speed_factor, 2.0)
                 if real_sleep >= 0.1:
                     time.sleep(real_sleep)
                     accumulated_sim_time = 0.0

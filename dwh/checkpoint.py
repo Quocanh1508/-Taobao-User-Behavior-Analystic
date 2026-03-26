@@ -45,6 +45,13 @@ def load_local_parquet_to_bq(project_id, local_pattern, table_id, partition_fiel
             type_=bigquery.TimePartitioningType.DAY,
             field=partition_field
         )
+        
+        # Ensure BQ doesn't null out columns stripped by PySpark Partitioning folders!
+        hive_opts = bigquery.HivePartitioningOptions()
+        hive_opts.mode = "AUTO"
+        hive_opts.source_uri_prefix = local_pattern.split(f'{partition_field}=')[0]
+        job_config.hive_partitioning = hive_opts
+        
     if cluster_fields:
         job_config.clustering_fields = cluster_fields
         

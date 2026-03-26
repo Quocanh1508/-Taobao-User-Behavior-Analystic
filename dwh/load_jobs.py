@@ -17,6 +17,11 @@ def load_parquet_to_bq(client, source_uri, table_id, partition_field=None, clust
             type_=bigquery.TimePartitioningType.DAY,
             field=partition_field
         )
+        
+        hive_opts = bigquery.HivePartitioningOptions()
+        hive_opts.mode = "AUTO"
+        hive_opts.source_uri_prefix = source_uri.split(f'{partition_field}=')[0]
+        job_config.hive_partitioning = hive_opts
     if cluster_fields:
         job_config.clustering_fields = cluster_fields
 
