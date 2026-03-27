@@ -53,8 +53,11 @@ def main():
     last_event_ts = None
     accumulated_sim_time = 0.0
     
+    # Auto-detect compression from file extension (None for plain CSV, 'zip' for .zip)
+    compression = 'zip' if source_file.endswith('.zip') else None
+
     # Read CSV in chunks
-    for chunk in pd.read_csv(source_file, header=None, names=columns, chunksize=chunksize, compression='zip'):
+    for chunk in pd.read_csv(source_file, header=None, names=columns, chunksize=chunksize, compression=compression):
         # Filter by start date if provided
         if start_ts > 0:
             chunk = chunk[chunk['event_ts'] >= start_ts]
@@ -106,7 +109,7 @@ def main():
             
             # Flush batch
             if current_buffer_size >= batch_size_bytes:
-                flush_buffer(buffer, target_bucket, event_ts)
+                flush_buffer(buffer, target_bucket)
                 buffer = []
                 current_buffer_size = 0
                 
@@ -116,13 +119,14 @@ def main():
 
     # Final flush
     if buffer:
-        flush_buffer(buffer, target_bucket, last_event_ts or int(time.time()))
+        flush_buffer(buffer, target_bucket)
         
     print(f"Replay finished. Total rows processed: {rows_processed}")
 
-def flush_buffer(buffer, bucket, ts):
-    dt = datetime.fromtimestamp(ts, timezone.utc)
-    # Target partition: Raw_Zone/Taobao/ingestion_date=YYYY-MM-DD/hour=HH/
+def flush_buffer(buffer, bucket):
+    # Use wall-clock NOW as the ingestion partition key.
+    # This must match Airflow's {{ ds }} which is today's date, not the 2017 event timestamp.
+    dt = datetime.now(timezone.utc)
     date_str = dt.strftime('%Y-%m-%d')
     hour_str = dt.strftime('%H')
     

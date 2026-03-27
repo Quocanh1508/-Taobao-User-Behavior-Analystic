@@ -18,6 +18,16 @@ GCS_PROCESSED_BUCKET = Variable.get("gcs_processed_bucket", default_var="taobao-
 BQ_PROJECT = Variable.get("bq_project", default_var="dwh-midterm-123456")
 BQ_DATASET = Variable.get("bq_dataset", default_var="taobao_dwh")
 
+# GCS connector JAR for Spark to access gs:// paths
+GCS_CONNECTOR_JAR = "https://storage.googleapis.com/hadoop-lib/gcs/gcs-connector-hadoop3-latest.jar"
+
+# Shared Spark conf for GCS service account authentication
+SPARK_GCS_CONF = {
+    "spark.hadoop.google.cloud.auth.service.account.enable": "true",
+    "spark.hadoop.google.cloud.auth.service.account.json.keyfile": "/opt/airflow/credentials.json",
+    "spark.sql.parquet.compression.codec": "snappy",
+}
+
 def task_success_slack_alert(context):
     slack_msg = f"""
     :white_check_mark: Task Succeeded.
@@ -87,11 +97,14 @@ with DAG(
         task_id='spark_cleanse',
         application='/app/spark_jobs/taobao_cleanse.py',
         conn_id='spark_default',
+        jars=GCS_CONNECTOR_JAR,
+        driver_memory="4g",
+        executor_memory="4g",
         application_args=[
             '--input-path', f"gs://{GCS_RAW_BUCKET}/Raw_Zone/Taobao/ingestion_date={{{{ ds }}}}/hour=*/*.json",
             '--output-path', f"gs://{GCS_PROCESSED_BUCKET}/Processed_Zone/Taobao/Cleansed/event_date={{{{ ds }}}}/"
         ],
-        conf={"spark.sql.parquet.compression.codec": "snappy"}
+        conf=SPARK_GCS_CONF
     )
 
     # 3. PySpark Transformation & Metrics extraction
@@ -99,12 +112,15 @@ with DAG(
         task_id='spark_transform_metrics',
         application='/app/spark_jobs/taobao_transform_metrics.py',
         conn_id='spark_default',
+        jars=GCS_CONNECTOR_JAR,
+        driver_memory="4g",
+        executor_memory="4g",
         application_args=[
             '--input-path', f"gs://{GCS_PROCESSED_BUCKET}/Processed_Zone/Taobao/Cleansed/event_date={{{{ ds }}}}/",
             '--output-fact', f"gs://{GCS_PROCESSED_BUCKET}/Processed_Zone/Taobao/Fact_Events/",
             '--output-metrics', f"gs://{GCS_PROCESSED_BUCKET}/Processed_Zone/Taobao/Metrics_Daily/"
         ],
-        conf={"spark.sql.parquet.compression.codec": "snappy"}
+        conf=SPARK_GCS_CONF
     )
 
     # 4a. Load Fact Behavior Parquet into BQ 

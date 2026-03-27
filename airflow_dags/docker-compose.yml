@@ -43,7 +43,7 @@ services:
       airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true &&
       airflow variables import /opt/airflow/variables.json &&
       airflow connections add google_cloud_default --conn-type google_cloud_platform --conn-extra '{\"key_path\": \"/opt/airflow/credentials.json\", \"project\": \"dwh-midterm-123456\"}' || true &&
-      airflow connections add spark_default --conn-type spark --conn-host 'spark://taobao-spark-master' --conn-port 7077 || true
+      airflow connections add spark_default --conn-type spark --conn-host 'local[*]' --conn-port 0 || true
       "
     depends_on:
       postgres:
