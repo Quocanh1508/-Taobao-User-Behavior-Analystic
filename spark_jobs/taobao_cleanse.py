@@ -59,7 +59,6 @@ def cleanse_data(spark, input_path, output_path):
     transformed_df \
         .write \
         .mode("overwrite") \
-        .partitionBy("event_date") \
         .parquet(output_path)
     
     print("Cleansing Job Completed Successfully!")

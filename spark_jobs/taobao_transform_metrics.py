@@ -49,7 +49,7 @@ def transform_metrics(spark, input_path, output_fact_path, output_metrics_path):
     ).repartition("event_date")
     
     print(f"Writing Fact Events to: {output_fact_path}")
-    fact_output.write.mode("overwrite").partitionBy("event_date").parquet(output_fact_path)
+    fact_output.write.mode("overwrite").parquet(output_fact_path)
 
     # 2. Funnel Analysis per session
     funnel_df = fact_output.groupBy("event_date", "session_id").agg(
@@ -81,8 +81,10 @@ def transform_metrics(spark, input_path, output_fact_path, output_metrics_path):
     w_rank = Window.partitionBy("event_date").orderBy(F.col("purchase_count").desc())
     top_10_cats = top_cat_df.withColumn("rank", F.rank().over(w_rank)).filter(F.col("rank") <= 10)
     
-    # Pack top 10 into an array per day
-    top_10_daily = top_10_cats.groupBy("event_date").agg(F.collect_list("category_id").alias("top_10_categories_bought"))
+    # Pack top 10 into a comma-separated string per day to avoid BQ Parquet Array/RECORD schema issues
+    top_10_daily = top_10_cats.groupBy("event_date").agg(
+        F.concat_ws(",", F.collect_list(F.col("category_id").cast("string"))).alias("top_10_categories_bought")
+    )
 
     # 5. Join final metrics and Output
     # We join DAU and funnel metrics
@@ -91,7 +93,7 @@ def transform_metrics(spark, input_path, output_fact_path, output_metrics_path):
                           .coalesce(1) # We just want a single simple file per day for metrics
     
     print(f"Writing daily metrics to: {output_metrics_path}")
-    final_metrics.write.mode("overwrite").partitionBy("event_date").parquet(output_metrics_path)
+    final_metrics.write.mode("overwrite").parquet(output_metrics_path)
     
     base_df.unpersist()
     print("Metrics Job Completed Successfully!")
